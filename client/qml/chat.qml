@@ -206,6 +206,8 @@ Rectangle {
                             width: 120
                             anchors.left: parent.left
                             anchors.leftMargin: 3
+                            anchors.top: parent.top
+                            anchors.topMargin: newUser ? 3 : 0
                             elide: Text.ElideRight
                             text: eventType == "state" || eventType == "emote" ? "* " + author :
                                   eventType != "other" ? author : "***"

@@ -224,6 +224,7 @@ Rectangle {
                             anchors.topMargin: newUser ? 3 : 0
                             anchors.right: parent.right
                             anchors.left: senderTag.right
+                            anchors.leftMargin: 3
 
                             TextEdit {
                                 id: contentField

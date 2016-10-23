@@ -161,7 +161,6 @@ Rectangle {
                     Rectangle {
                         Layout.alignment: Qt.AlignTop
                         Layout.preferredWidth: 60
-                        Layout.fillHeight: true
                         color: root.color
                         Label {
                             id: timelabel
@@ -276,7 +275,7 @@ Rectangle {
                     Rectangle {
                         Layout.alignment: Qt.AlignTop
                         width: 30
-                        Layout.fillHeight: true
+                        height: 22
                         color: root.color
                         ToolButton {
                             id: showSourceButton

@@ -1,6 +1,7 @@
 import QtQuick 2.2
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.1
+import QtGraphicalEffects 1.0
 
 Rectangle {
     id: root
@@ -8,7 +9,7 @@ Rectangle {
     SystemPalette { id: defaultPalette; colorGroup: SystemPalette.Active }
     SystemPalette { id: disabledPalette; colorGroup: SystemPalette.Disabled }
 
-    color: defaultPalette.base
+    color: defaultPalette.highlight
 
     signal getPreviousContent()
 
@@ -93,6 +94,11 @@ Rectangle {
             stickToBottom = nowAtYEnd;
         }
 
+        footer: Rectangle {
+            width:parent.width
+            height: 5
+            color: root.color
+        }
     }
 
     Slider {
@@ -130,102 +136,158 @@ Rectangle {
         Rectangle {
             width: parent.width
             height: childrenRect.height
+            color: root.color
 
-            RowLayout {
-                id: message
+            ColumnLayout{
+                id: messageContainer
                 width: parent.width
-                spacing: 3
-
-                property string textColor:
-                        if (highlight) decoration
-                        else if (eventType == "state" || eventType == "other") disabledPalette.text
-                        else defaultPalette.text
-
-                Label {
-                    Layout.alignment: Qt.AlignTop
-                    id: timelabel
-                    text: "<" + time.toLocaleTimeString(Qt.locale(), Locale.ShortFormat) + ">"
-                    color: disabledPalette.text
-                }
-                Label {
-                    Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-                    Layout.preferredWidth: 120
-                    elide: Text.ElideRight
-                    text: eventType == "state" || eventType == "emote" ? "* " + author :
-                          eventType != "other" ? author : "***"
-                    horizontalAlignment: if( ["other", "emote", "state"]
-                                                 .indexOf(eventType) >= 0 )
-                                         { Text.AlignRight }
-                    color: message.textColor
-                }
+                spacing: 0
                 Rectangle {
-                    color: defaultPalette.base
-                    Layout.fillWidth: true
-                    Layout.minimumHeight: childrenRect.height
-                    Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                    width:parent.width
+                    height: 5
+                    visible: newUser
+                    color: root.color
+                }
 
-                    Column {
-                        spacing: 0
-                        width: parent.width
+                RowLayout {
+                    id: message
+                    width: parent.width
+                    spacing: 8
 
-                        TextEdit {
-                            id: contentField
-                            selectByMouse: true; readOnly: true; font: timelabel.font;
-                            textFormat: contentType == "text/html" ? TextEdit.RichText
-                                                                   : TextEdit.PlainText;
-                            text: eventType != "image" ? content : ""
-                            height: eventType != "image" ? implicitHeight : 0
-                            wrapMode: Text.Wrap; width: parent.width
-                            color: message.textColor
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.IBeamCursor
-                                acceptedButtons: Qt.NoButton
-                            }
-                            onLinkActivated: {
-                                Qt.openUrlExternally(link)
-                            }
+                    property string textColor:
+                            if (highlight) decoration
+                            else if (eventType == "state" || eventType == "other") disabledPalette.text
+                            else defaultPalette.text
+                    Rectangle {
+                        Layout.alignment: Qt.AlignTop
+                        Layout.preferredWidth: 60
+                        Layout.fillHeight: true
+                        color: root.color
+                        Label {
+                            id: timelabel
+                            text: time.toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
+                            color: defaultPalette.base
+                            opacity: newTime ? 1 : 0
+                            anchors.horizontalCenter: parent.horizontalCenter
                         }
+                    }
+                    Rectangle {
+                        Layout.alignment: Qt.AlignTop
+                        width: 30
+                        height: 22
+                        color: root.color
                         Image {
-                            id: imageField
-                            fillMode: Image.PreserveAspectFit
-                            width: eventType == "image" ? parent.width : 0
-
-                            sourceSize: eventType == "image" ? "500x500" : "0x0"
-                            source: eventType == "image" ? content : ""
-                        }
-                        Loader {
-                            asynchronous: true
-                            visible: status == Loader.Ready
-                            width: parent.width
-                            property string sourceText: toolTip
-
-                            sourceComponent: showSource.checked ? sourceArea : undefined
+                            id: img
+                            anchors.top:parent.top
+                            anchors.topMargin: -3
+                            width: 28
+                            height: 28
+                            opacity: newUser ? 1 : 0
+                            fillMode: Image.PreserveAspectCrop
+                            source: avatar
+                            layer.enabled: true
+                            layer.effect: OpacityMask {
+                                maskSource: Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 28
+                                    height: 28
+                                    radius: 14
+                                }
+                            }
                         }
                     }
-                }
-                ToolButton {
-                    id: showSourceButton
-                    text: "..."
-                    Layout.alignment: Qt.AlignTop
+                    Rectangle {
+                        color: defaultPalette.base
+                        Layout.fillWidth: true
+                        Layout.minimumHeight: childrenRect.height
+                        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                        Label {
+                            id: senderTag
+                            width: 120
+                            anchors.left: parent.left
+                            anchors.leftMargin: 3
+                            elide: Text.ElideRight
+                            text: eventType == "state" || eventType == "emote" ? "* " + author :
+                                  eventType != "other" ? author : "***"
+                            horizontalAlignment: if( ["other", "emote", "state"]
+                                                         .indexOf(eventType) >= 0 )
+                                                 { Text.AlignRight }
+                            opacity: newUser || ["other", "emote", "state"].indexOf(eventType) >= 0 ? 1 : 0
+                            color: message.textColor
+                        }
 
-                    action: Action {
-                        id: showSource
+                        Column {
+                            spacing: 0
+                            anchors.top: parent.top
+                            anchors.topMargin: newUser ? 3 : 0
+                            anchors.right: parent.right
+                            anchors.left: senderTag.right
 
-                        tooltip: "Show source"
-                        checkable: true
+                            TextEdit {
+                                id: contentField
+                                selectByMouse: true; readOnly: true; font: timelabel.font;
+                                textFormat: contentType == "text/html" ? TextEdit.RichText
+                                                                       : TextEdit.PlainText;
+                                text: eventType != "image" ? content : ""
+                                height: eventType != "image" ? implicitHeight : 0
+                                wrapMode: Text.Wrap; width: parent.width
+                                color: message.textColor
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.IBeamCursor
+                                    acceptedButtons: Qt.NoButton
+                                }
+                                onLinkActivated: {
+                                    Qt.openUrlExternally(link)
+                                }
+                            }
+                            Image {
+                                id: imageField
+                                fillMode: Image.PreserveAspectFit
+                                width: eventType == "image" ? parent.width : 0
+
+                                sourceSize: eventType == "image" ? "500x500" : "0x0"
+                                source: eventType == "image" ? content : ""
+                            }
+                            Loader {
+                                asynchronous: true
+                                visible: status == Loader.Ready
+                                width: parent.width
+                                property string sourceText: toolTip
+
+                                sourceComponent: showSource.checked ? sourceArea : undefined
+                            }
+                        }
+                        Rectangle {
+                            color: message.textColor
+                            width: messageModel.lastReadId == eventId ? parent.width : 0
+                            height: 2
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            Behavior on width {
+                                NumberAnimation { duration: 500; easing.type: Easing.OutQuad }
+                            }
+                        }
                     }
-                }
-            }
-            Rectangle {
-                color: message.textColor
-                width: messageModel.lastReadId == eventId ? parent.width : 0
-                height: 1
-                anchors.bottom: message.bottom
-                anchors.horizontalCenter: message.horizontalCenter
-                Behavior on width {
-                    NumberAnimation { duration: 500; easing.type: Easing.OutQuad }
+                    Rectangle {
+                        Layout.alignment: Qt.AlignTop
+                        width: 30
+                        Layout.fillHeight: true
+                        color: root.color
+                        ToolButton {
+                            id: showSourceButton
+                            anchors.fill: parent
+                            text: "..."
+
+                            action: Action {
+                                id: showSource
+
+                                tooltip: "Show source"
+                                checkable: true
+                            }
+                        }
+                    }
                 }
             }
         }

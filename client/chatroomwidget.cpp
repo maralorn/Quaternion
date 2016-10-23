@@ -67,6 +67,31 @@ bool ChatEdit::event(QEvent *event)
     return QLineEdit::event(event);
 }
 
+class AvatarProvider: public QQuickImageProvider
+{
+    public:
+        AvatarProvider(QMatrixClient::Connection* connection)
+    : QQuickImageProvider(QQmlImageProviderBase::Pixmap, QQmlImageProviderBase::ForceAsynchronousImageLoading)
+    , m_connection(connection) {};
+
+        QPixmap requestPixmap(const QString& id, QSize* size, const QSize& requestedSize)
+        {
+            if (size)
+                *size = QSize(25, 25);
+            return m_connection->user(id)->avatar(
+                requestedSize.width() > 0 ? requestedSize.width() : 25,
+                requestedSize.height() > 0 ? requestedSize.height(): 25);
+        };
+
+        void setConnection(QMatrixClient::Connection* connection)
+        {
+            m_connection = connection;
+        };
+
+    private:
+        QMatrixClient::Connection* m_connection;
+};
+
 ChatRoomWidget::ChatRoomWidget(QWidget* parent)
     : QWidget(parent)
 {
@@ -82,6 +107,9 @@ ChatRoomWidget::ChatRoomWidget(QWidget* parent)
 
     m_imageProvider = new ImageProvider(m_currentConnection);
     m_quickView->engine()->addImageProvider("mtx", m_imageProvider);
+
+    m_avatarProvider = new AvatarProvider(m_currentConnection);
+    m_quickView->engine()->addImageProvider("avatar", m_avatarProvider);
 
     QWidget* container = QWidget::createWindowContainer(m_quickView, this);
     container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -162,6 +190,7 @@ void ChatRoomWidget::setConnection(QMatrixClient::Connection* connection)
     setRoom(nullptr);
     m_currentConnection = connection;
     m_imageProvider->setConnection(connection);
+    m_avatarProvider->setConnection(connection);
     m_messageModel->setConnection(connection);
 }
 

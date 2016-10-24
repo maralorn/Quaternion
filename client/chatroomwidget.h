@@ -48,11 +48,11 @@ class ChatRoomWidget: public QWidget
         void enableDebug();
         void triggerCompletion();
         void cancelCompletion();
-        void lookAtRoom();
 
     signals:
         void joinRoomNeedsInteraction();
         void showStatusMessage(const QString& message, int timeout);
+        void waitingForActivityChange(bool waiting);
 
     public slots:
         void setRoom(QuaternionRoom* room);
@@ -60,6 +60,8 @@ class ChatRoomWidget: public QWidget
         void topicChanged();
         void typingChanged();
         void getPreviousContent();
+        void updateWaitStatus();
+        void lookAtRoom();
 
     private slots:
         void sendLine();
@@ -69,6 +71,7 @@ class ChatRoomWidget: public QWidget
         QuaternionRoom* m_currentRoom;
         QMatrixClient::Connection* m_currentConnection;
         bool m_completing;
+        bool m_waitingForActivity;
         QStringList m_completionList;
         int m_completionListPosition;
         int m_completionInsertStart;

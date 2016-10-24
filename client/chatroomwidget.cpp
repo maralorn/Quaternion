@@ -41,6 +41,7 @@
 #include "models/messageeventmodel.h"
 #include "quaternionroom.h"
 #include "imageprovider.h"
+#include "message.h"
 
 class ChatEdit : public QLineEdit
 {
@@ -74,6 +75,7 @@ ChatRoomWidget::ChatRoomWidget(QWidget* parent)
     m_currentRoom = nullptr;
     m_currentConnection = nullptr;
     m_completing = false;
+    m_waitingForActivity = false;
 
     //m_messageView = new QListView();
     //m_messageView->setModel(m_messageModel);
@@ -94,6 +96,7 @@ ChatRoomWidget::ChatRoomWidget(QWidget* parent)
     QObject* rootItem = m_quickView->rootObject();
     connect( rootItem, SIGNAL(getPreviousContent()), this, SLOT(getPreviousContent()) );
 
+    connect( m_messageModel, &MessageEventModel::lastReadIdChanged, this, &ChatRoomWidget::updateWaitStatus );
 
     m_chatEdit = new ChatEdit(this);
     connect( m_chatEdit, &QLineEdit::returnPressed, this, &ChatRoomWidget::sendLine );
@@ -120,6 +123,19 @@ void ChatRoomWidget::lookAtRoom()
 {
     if ( m_currentRoom )
         m_currentRoom->lookAt();
+    m_waitingForActivity = false;
+}
+
+void ChatRoomWidget::updateWaitStatus()
+{
+    bool newWaitingForActivity =
+        m_currentRoom && m_currentConnection &&
+        m_currentRoom->lastReadEvent(m_currentConnection->user()) != m_currentRoom->messages().last()->messageEvent()->id();
+    if (newWaitingForActivity != m_waitingForActivity)
+    {
+        m_waitingForActivity = newWaitingForActivity;
+        emit waitingForActivityChange(m_waitingForActivity);
+    }
 }
 
 void ChatRoomWidget::enableDebug()
@@ -144,6 +160,7 @@ void ChatRoomWidget::setRoom(QuaternionRoom* room)
         m_chatEdit->setText( m_currentRoom->cachedInput() );
         connect( m_currentRoom, &QMatrixClient::Room::typingChanged, this, &ChatRoomWidget::typingChanged );
         connect( m_currentRoom, &QMatrixClient::Room::topicChanged, this, &ChatRoomWidget::topicChanged );
+        connect( m_currentRoom, &QMatrixClient::Room::addedMessages, this, &ChatRoomWidget::updateWaitStatus );
         m_currentRoom->setShown(true);
         topicChanged();
         typingChanged();
@@ -151,6 +168,7 @@ void ChatRoomWidget::setRoom(QuaternionRoom* room)
         m_topicLabel->clear();
         m_currentlyTyping->clear();
     }
+    updateWaitStatus();
     m_messageModel->changeRoom( m_currentRoom );
     //m_messageView->scrollToBottom();
     QObject* rootItem = m_quickView->rootObject();

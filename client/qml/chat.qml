@@ -135,7 +135,7 @@ Rectangle {
         id: messageDelegate
 
         Rectangle {
-            width: parent.width
+            width: chatView.width
             height: childrenRect.height
             color: root.color
 

@@ -1,5 +1,5 @@
 import QtQuick 2.2
-import QtQuick.Controls 1.0
+import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.1
 
 Rectangle {
@@ -93,35 +93,9 @@ Rectangle {
         onMovementEnded: {
             stickToBottom = nowAtYEnd
         }
-
-    }
-
-    Slider {
-        id: chatViewScroller
-        orientation: Qt.Vertical
-        anchors.horizontalCenter: chatView.right
-        anchors.verticalCenter: chatView.verticalCenter
-        height: chatView.height / 2
-
-        value: -chatView.verticalVelocity / chatView.height
-        maximumValue: 10.0
-        minimumValue: -10.0
-
-        activeFocusOnPress: false
-        activeFocusOnTab: false
-
-        onPressedChanged: {
-            if (!pressed)
-                value = 0
-        }
-
-        onValueChanged: {
-            if (pressed && value)
-                chatView.flick(0, chatView.height * value)
-        }
-        Component.onCompleted: {
-            // This will cause continuous scrolling while the scroller is out of 0
-            chatView.flickEnded.connect(chatViewScroller.valueChanged)
+        ScrollBar.vertical: ScrollBar{
+            id: scrollBar
+            active: true
         }
     }
 
@@ -255,12 +229,12 @@ Rectangle {
                             source: eventType == "image" ? content : ""
                         }
                         Loader {
+                            id: sourceLoader
                             asynchronous: true
                             visible: status == Loader.Ready
                             width: parent.width
                             property string sourceText: toolTip
-
-                            sourceComponent: showSource.checked ? sourceArea : undefined
+                            sourceComponent: undefined
                         }
                     }
                 }
@@ -272,13 +246,8 @@ Rectangle {
                     ToolButton {
                         id: showSourceButton
                         text: "..."
-
-                        action: Action {
-                            id: showSource
-
-                            tooltip: "Show source"
-                            checkable: true
-                        }
+                        Layout.alignment: Qt.AlignTop
+                        onClicked: sourceLoader.sourceComponent = checked ? sourceArea : undefined
                     }
                 }
             }

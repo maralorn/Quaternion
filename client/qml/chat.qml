@@ -131,6 +131,7 @@ Rectangle {
         Rectangle {
             width: chatView.width
             height: childrenRect.height
+            color: defaultPalette.base
 
             // A message is considered shown if its bottom is within the
             // viewing area of the timeline.
@@ -195,13 +196,18 @@ Rectangle {
 
                 Label {
                     Layout.alignment: Qt.AlignTop
+                    Layout.leftMargin: 20
+                    Layout.rightMargin: 20
                     id: timelabel
-                    text: "<" + time.toLocaleTimeString(Qt.locale(), Locale.ShortFormat) + ">"
+                    opacity: newTime ? 1 : 0
+                    text: time.toLocaleTimeString(Qt.locale(), Locale.ShortFormat)
                     color: disabledPalette.text
                 }
                 Label {
                     Layout.alignment: Qt.AlignTop | Qt.AlignLeft
                     Layout.preferredWidth: 120
+                    Layout.topMargin: newUser ? 8 : 0
+                    opacity: newUser || eventType == "state" || eventType == "emote" ? 1 : 0
                     elide: Text.ElideRight
                     text: eventType == "state" || eventType == "emote" ? "* " + author :
                           eventType != "other" ? author : "***"
@@ -212,6 +218,7 @@ Rectangle {
                 }
                 Rectangle {
                     color: defaultPalette.base
+                    Layout.topMargin: newUser ? 8 : 0
                     Layout.fillWidth: true
                     Layout.minimumHeight: childrenRect.height
                     Layout.alignment: Qt.AlignTop | Qt.AlignLeft
@@ -257,16 +264,21 @@ Rectangle {
                         }
                     }
                 }
-                ToolButton {
-                    id: showSourceButton
-                    text: "..."
-                    Layout.alignment: Qt.AlignTop
+                Rectangle{
+                    Layout.alignment: Qt.AlignTop | Qt.AlignRight
+                    width: childrenRect.width
+                    height: childrenRect.height/2
+                    scale: 0.5
+                    ToolButton {
+                        id: showSourceButton
+                        text: "..."
 
-                    action: Action {
-                        id: showSource
+                        action: Action {
+                            id: showSource
 
-                        tooltip: "Show source"
-                        checkable: true
+                            tooltip: "Show source"
+                            checkable: true
+                        }
                     }
                 }
             }

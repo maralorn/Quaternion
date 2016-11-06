@@ -46,6 +46,8 @@ enum EventRoles {
     ContentRole,
     ContentTypeRole,
     HighlightRole,
+    NewTimeRole,
+    NewUserRole
 };
 
 QHash<int, QByteArray> MessageEventModel::roleNames() const
@@ -59,6 +61,8 @@ QHash<int, QByteArray> MessageEventModel::roleNames() const
     roles[ContentRole] = "content";
     roles[ContentTypeRole] = "contentType";
     roles[HighlightRole] = "highlight";
+    roles[NewTimeRole] = "newTime";
+    roles[NewUserRole] = "newUser";
     return roles;
 }
 
@@ -128,7 +132,13 @@ QVariant MessageEventModel::data(const QModelIndex& index, int role) const
             index.row() < 0 || index.row() >= m_currentRoom->messages().count())
         return QVariant();
 
-    const Message* message = m_currentRoom->messages().at(index.row());;
+    const Message* message = m_currentRoom->messages().at(index.row());
+    Event* prev_event;
+    if (index.row() > 1)
+    {
+        const Message* prev_message = m_currentRoom->messages().at(index.row() - 1);
+        prev_event = prev_message->messageEvent();
+    }
     Event* event = message->messageEvent();
     // FIXME: Rewind to the name that was at the time of this event
     QString senderName = m_currentRoom->roomMembername(event->senderId());
@@ -333,7 +343,12 @@ QVariant MessageEventModel::data(const QModelIndex& index, int role) const
     {
         return event->id();
     }
-
+    if( role == NewTimeRole )
+        return !prev_event ||
+            event->timestamp().time().minute() != prev_event->timestamp().time().minute() ||
+            event->timestamp().time().hour() != prev_event->timestamp().time().hour();
+    if( role == NewUserRole )
+        return !prev_event || event->senderId() != prev_event->senderId();
     return QVariant();
 }
 
